@@ -10,6 +10,8 @@
 #include "ActsExamples/Framework/Sequencer.hpp"
 #include "ActsExamples/Options/CommonOptions.hpp"
 #include "ActsExamples/Options/MagneticFieldOptions.hpp"
+#include "ActsExamples/Printers/ParticlesPrinter.hpp"
+#include "ActsExamples/Io/Root/RootParticleWriter.hpp"
 #include "ActsExamples/Options/ParticleSelectorOptions.hpp"
 #include "ActsExamples/Options/ParticleSmearingOptions.hpp"
 #include "ActsExamples/Options/Pythia8Options.hpp"
@@ -20,6 +22,7 @@
 #include "ActsExamples/Printers/TrackParametersPrinter.hpp"
 #include "ActsExamples/Io/Root/RootSmearedTrackParameterWriter.hpp"
 #include "ActsExamples/Vertexing/AdaptiveMultiVertexFinderAlgorithm.hpp"
+#include "ActsExamples/Utilities/Paths.hpp"
 
 #include <memory>
 
@@ -44,7 +47,7 @@ int main(int argc, char* argv[]) {
 
   // basic setup
   auto logLevel = Options::readLogLevel(vars);
-  // auto outputDir = ensureWritableDirectory(vm["output-dir"].as<std::string>());
+  auto outputDir = ensureWritableDirectory(vars["output-dir"].as<std::string>());
   auto rnd =
       std::make_shared<RandomNumbers>(Options::readRandomNumbersConfig(vars));
   Sequencer sequencer(Options::readSequencerConfig(vars));
@@ -57,6 +60,21 @@ int main(int argc, char* argv[]) {
   evgen.outputParticles = "particles_generated";
   evgen.randomNumbers = rnd;
   sequencer.addReader(std::make_shared<EventGenerator>(evgen, logLevel));
+
+  // print particle_init
+  // ParticlesPrinter::Config printInitialCfg;
+  // printInitialCfg.inputParticles = evgen.outputParticles;
+  // sequencer.addAlgorithm(
+  //     std::make_shared<ParticlesPrinter>(printInitialCfg, logLevel));
+
+  // Output particle_init
+  RootParticleWriter::Config writeInitial;
+  writeInitial.inputParticles = evgen.outputParticles;
+  writeInitial.filePath = joinPaths(outputDir, "particles_initial.root");
+  writeInitial.treeName = "particles_initial";
+  std::cout<<writeInitial.treeName<<std::endl;
+  sequencer.addWriter(
+      std::make_shared<RootParticleWriter>(writeInitial, logLevel));
 
   // pre-select particles
   ParticleSelector::Config selectParticles =
@@ -74,17 +92,16 @@ int main(int argc, char* argv[]) {
   auto particleSmearingCfg = setupParticleSmearing(
       vars, sequencer, rnd, selectParticles.outputParticles);
 
-  // Output track parameter
-  TrackParametersPrinter::Config printTracks;
-  printTracks.inputTrackParameters = particleSmearingCfg.outputTrackParameters;
-  sequencer.addAlgorithm(
-  std::make_shared<TrackParametersPrinter>(printTracks, logLevel));
+  // print track parameter
+  // TrackParametersPrinter::Config printTracks;
+  // printTracks.inputTrackParameters = particleSmearingCfg.outputTrackParameters;
+  // sequencer.addAlgorithm(
+  // std::make_shared<TrackParametersPrinter>(printTracks, logLevel));
 
   //track parameter writer
   RootSmearedTrackParameterWriter::Config trackParamsWriterCfg;
   trackParamsWriterCfg.inputTrackParameters = particleSmearingCfg.outputTrackParameters;
-  
-  trackParamsWriterCfg.filePath = "/smearedparams.root"; //outputDir + 
+  trackParamsWriterCfg.filePath = joinPaths(outputDir, "/smearedparams.root");
   trackParamsWriterCfg.treeName = "smearedparams";
   sequencer.addWriter(std::make_shared<RootSmearedTrackParameterWriter>(
       trackParamsWriterCfg, logLevel));
