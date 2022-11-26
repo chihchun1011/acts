@@ -15,6 +15,14 @@ add_executable(
 target_link_libraries(
   ActsExampleAdaptiveMultiVertexFinder
   PRIVATE ${_common_libraries} )
+
+add_executable(
+  New
+  NewExample.cpp)
+target_link_libraries(
+  New
+  PRIVATE ${_common_libraries} ActsExamplesIoRoot ActsExamplesPrinters)
+
 add_executable(
   ActsExampleIterativeVertexFinder
   IterativeVertexFinderExample.cpp)
@@ -36,6 +44,7 @@ target_link_libraries(
 
 install(
   TARGETS
+    New
     ActsExampleAdaptiveMultiVertexFinder
     ActsExampleIterativeVertexFinder
     ActsExampleVertexFitter

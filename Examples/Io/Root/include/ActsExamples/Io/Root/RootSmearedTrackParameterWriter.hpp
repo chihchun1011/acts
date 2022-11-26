@@ -1,0 +1,81 @@
+// This file is part of the Acts project.
+//
+// Copyright (C) 2017-2018 CERN for the benefit of the Acts project
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+#pragma once
+
+#include "ActsExamples/EventData/Track.hpp"
+#include "ActsExamples/Framework/WriterT.hpp"
+
+#include <mutex>
+
+class TFile;
+class TTree;
+
+namespace ActsExamples {
+
+using TrackParameterWriter = WriterT<TrackParametersContainer>;
+
+/// Write out the track parameters from both simulation and those estimated from
+/// reconstructed seeds into a TTree
+///
+/// Each entry in the TTree corresponds to one seed for optimum writing
+/// speed. The event number is part of the written data.
+class RootSmearedTrackParameterWriter final : public TrackParameterWriter {
+ public:
+  struct Config {
+    /// Input estimated track parameters collection.
+    std::string inputTrackParameters;
+    std::string filePath = "smearedparams.root";
+    /// name of the output tree.
+    std::string treeName = "smearedparams";
+    /// file access mode.
+    std::string fileMode = "RECREATE";
+  };
+
+  /// Constructor
+  ///
+  /// @param config Configuration struct
+  /// @param level Message level declaration
+  RootSmearedTrackParameterWriter(const Config& config,
+                           Acts::Logging::Level level = Acts::Logging::INFO);
+
+  /// Virtual destructor
+  ~RootSmearedTrackParameterWriter() override;
+
+  /// End-of-run hook
+  ProcessCode endRun() override;
+
+  /// Get readonly access to the config parameters
+  const Config& config() const { return m_cfg; }
+
+ protected:
+  /// @brief Write method called by the base class
+  /// @param [in] ctx is the algorithm context for event information
+  /// @param [in] trackParams are parameters to write
+  ProcessCode writeT(const AlgorithmContext& ctx,
+                     const TrackParametersContainer& trackParams) override;
+
+ private:
+  Config m_cfg;             ///< The config class
+  std::mutex m_writeMutex;  ///< Mutex used to protect multi-threaded writes
+  TFile* m_outputFile{nullptr};  ///< The output file
+  TTree* m_outputTree{nullptr};  ///< The output tree
+  int m_eventNr{0};              ///< the event number of
+
+  float m_loc0{NaNfloat};   ///< loc0
+  float m_loc1{NaNfloat};   ///< loc1
+  float m_phi{NaNfloat};    ///< phi
+  float m_theta{NaNfloat};  ///< theta
+  float m_qop{NaNfloat};    ///< q/p
+  float m_time{NaNfloat};   ///< time
+  float m_p{NaNfloat};      ///< p
+  float m_pt{NaNfloat};     ///< pt
+  float m_eta{NaNfloat};    ///< eta
+};
+
+}  // namespace ActsExamples
