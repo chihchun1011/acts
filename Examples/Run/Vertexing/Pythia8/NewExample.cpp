@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
   RootParticleWriter::Config writeInitial;
   writeInitial.inputParticles = evgen.outputParticles;
   writeInitial.filePath = joinPaths(outputDir, "particles_initial.root");
-  writeInitial.treeName = "particles_initial";
-  std::cout<<writeInitial.treeName<<std::endl;
+  writeInitial.treeName = "particles";
+  // std::cout<<writeInitial.treeName<<std::endl;
   sequencer.addWriter(
       std::make_shared<RootParticleWriter>(writeInitial, logLevel));
 
